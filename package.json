@@ -17,6 +17,7 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
+    "@lit-labs/motion": "^1.0.3",
     "lit": "^2.4.0"
   },
   "devDependencies": {
