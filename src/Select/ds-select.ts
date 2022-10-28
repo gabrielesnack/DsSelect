@@ -6,7 +6,7 @@ import {repeat} from 'lit/directives/repeat.js';
 import {ifDefined} from 'lit/directives/if-defined.js';
 import ResetCss from '@unocss/reset/eric-meyer.css'
 import { HTMLElementEvent, OptionsType } from './interface';
-import { isItemChecked } from './helper';
+import { filterByLabel, isItemChecked, sortByItemsChecked } from './helper';
 
 
 const chevronIconTemplate = cache(svg`
@@ -28,8 +28,8 @@ const timesIconTemplate = cache(svg`
 `)
 
 
-@customElement('design-system-select')
-export class DesignSystemSelect extends LitElement {
+@customElement('ds-select')
+export class DsSelect extends LitElement {
   static styles = [
     unsafeCSS(ResetCss), 
     css`@unocss-placeholder;`, 
@@ -40,14 +40,10 @@ export class DesignSystemSelect extends LitElement {
     `
   ]
 
-  @state()
-  private isOpen = false;
-
-  @state()
-  private optionsChecked = [] as OptionsType[]
-
-  @state()
-  private value : string | null = null;
+  constructor() {
+    super()
+    this._computedOptions = this.options;
+  }
 
   @property({type: Boolean})
   isMulti = false;
@@ -63,6 +59,24 @@ export class DesignSystemSelect extends LitElement {
     { id: 4, value: '4', label: 'Laranja'},
   ] as OptionsType[]
 
+  @state()
+  private isOpen = false;
+
+  @state()
+  private optionsChecked = [] as OptionsType[]
+
+  @state()
+  private value : string | null = null;
+
+  @state()
+  private _computedOptions: OptionsType[] = []
+  private get computedOptions() { return this._computedOptions; }
+  private set computedOptions(value) {
+    const sortedValue = sortByItemsChecked(value, this.optionsChecked)
+    this._computedOptions = sortedValue;
+  }
+
+  // events
   private _onChange(evt: HTMLElementEvent<HTMLInputElement> ) {
     if (this.isMulti) return;
 
@@ -77,11 +91,9 @@ export class DesignSystemSelect extends LitElement {
   }
 
   private _onInput(evt: HTMLElementEvent<HTMLInputElement>) {
+    // define debounce
     const value = evt.target.value;
-    const regex = new RegExp(`${value}`)
-    const filterFn = (option: OptionsType) => option.label.toString().toLocaleLowerCase().match(regex)
-
-    const optionsFiltered = this.options.filter(filterFn)
+    this.computedOptions = filterByLabel(value, this.options)
   }
 
   private _onClick() {
@@ -111,18 +123,6 @@ export class DesignSystemSelect extends LitElement {
     this.handleMultiOption(item)
   }
 
-  // public get sortedOptions() {
-  //   return this.options.sort((firstOption, secondOption) => {
-  //     let firstIsChecked = !!this.optionsChecked.find((option) => isItemChecked(option, firstOption))
-  //     let secondIsChecked = !!this.optionsChecked.find((option) => isItemChecked(option, secondOption))
-   
-  //     if (firstIsChecked && secondIsChecked ) return 0; // don't worry about sort
-  //     if (firstIsChecked && !secondIsChecked) return -1; // sort first before second
-   
-  //      return 1 // sort second after first
-  //  })
-  // }
-
   private dropdownItemTemplate(item: OptionsType) {
     const isSelected = this.optionsChecked.length && this.optionsChecked.find(option => isItemChecked(option, item));
     if (!!isSelected)
@@ -148,7 +148,7 @@ export class DesignSystemSelect extends LitElement {
         in: fadeIn,
         out: fadeOut,
       })}>
-        ${repeat(this.options, (item) => item.id || item.value, this.dropdownItemTemplate.bind(this) )}
+        ${repeat(this.computedOptions, (item) => item.id || item.value, this.dropdownItemTemplate.bind(this) )}
       </ul>
     `
   }
@@ -201,6 +201,6 @@ export class DesignSystemSelect extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'my-element': DesignSystemSelect
+    'ds-select': DsSelect
   }
 }
