@@ -19,7 +19,7 @@ export const sortByItemsChecked = (options: OptionsType[], optionsChecked: Optio
 } 
 
 export const filterByLabel = (label: string, options: OptionsType[]) => {
-  const regex = new RegExp(`${label}`)
+  const regex = new RegExp(`${label.toLocaleLowerCase()}`)
   const filterFn = (option: OptionsType) => option.label.toString().toLocaleLowerCase().match(regex)
 
   return options.filter(filterFn);
