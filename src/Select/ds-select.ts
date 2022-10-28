@@ -6,7 +6,7 @@ import {repeat} from 'lit/directives/repeat.js';
 import {ifDefined} from 'lit/directives/if-defined.js';
 import ResetCss from '@unocss/reset/eric-meyer.css'
 import { HTMLElementEvent, OptionsType } from './interface';
-import { filterByLabel, isItemChecked, sortByItemsChecked } from './helper';
+import { filterByLabel, isChecked, isOptionChecked, sliceLabel, sortByItemsChecked } from './helper';
 
 
 const chevronIconTemplate = cache(svg`
@@ -14,19 +14,6 @@ const chevronIconTemplate = cache(svg`
  <!--! Font Awesome Pro 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/>
 </svg>
 `)
-
-const checkedIconTemplate = cache(svg`
-<svg class="w-4" viewBox="0 0 512 512">
-<!--! Font Awesome Pro 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/>
-</svg>
-`)
-
-const timesIconTemplate = cache(svg`
-<svg viewBox="0 0 512 512" class="w-4 fill-gray-400 cursor-pointer">
-  <!--! Font Awesome Pro 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M256 512c141.4 0 256-114.6 256-256S397.4 0 256 0S0 114.6 0 256S114.6 512 256 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/>
-</svg>
-`)
-
 
 @customElement('ds-select')
 export class DsSelect extends LitElement {
@@ -45,28 +32,43 @@ export class DsSelect extends LitElement {
     this._computedOptions = this.options;
   }
 
-  @property({type: Boolean})
+  @property()
+  placeholder: string = 'Escolha uma fruta'
+
+  @property()
+  placeholderSearchable: string = 'Digite a opção desejada'
+
+  @property({type: Boolean, attribute: 'is-multi'})
   isMulti = false;
 
   @property({ type: Boolean, attribute: 'is-filterable'})
   isFilterable: true | undefined = undefined;
 
   @property()
-  public options = [
-    { id: 1, value: '1', label: 'Banana'},
+  options = [
+    { id: 1, value: '1', label: 'Banana com cauda de chocolate'},
     { id: 2, value: '2', label: 'Ana'},
     { id: 3, value: '3', label: 'Maça'},
     { id: 4, value: '4', label: 'Laranja'},
   ] as OptionsType[]
 
   @state()
-  private isOpen = false;
+  private _isOpen = false;
+
+  private get isOpen() {
+    return this._isOpen
+  }
+
+  private set isOpen(value: boolean) {
+    this.shouldHideValueOnFiltering(value);
+    this._isOpen = value;
+  }
 
   @state()
   private optionsChecked = [] as OptionsType[]
 
   @state()
-  private value : string | null = null;
+  private value : string | null | number = null;
 
   @state()
   private _computedOptions: OptionsType[] = []
@@ -107,7 +109,7 @@ export class DsSelect extends LitElement {
   }
 
   private handleMultiOption(item: OptionsType) {
-    const foundIndex = this.optionsChecked.findIndex(option => isItemChecked(option, item))
+    const foundIndex = this.optionsChecked.findIndex(option => isChecked(option, item))
 
     if (foundIndex !== -1) {
       this.optionsChecked = this.optionsChecked.filter((_, idx) => idx !== foundIndex)
@@ -117,40 +119,10 @@ export class DsSelect extends LitElement {
     this.optionsChecked = [...this.optionsChecked, item];
   }
 
-  private handleOption(item: OptionsType) : void {
+  private selectOption(item: OptionsType) : void {
     if (!this.isMulti) return this.handleSingleOption(item);
 
     this.handleMultiOption(item)
-  }
-
-  private dropdownItemTemplate(item: OptionsType) {
-    const isSelected = this.optionsChecked.length && this.optionsChecked.find(option => isItemChecked(option, item));
-    if (!!isSelected)
-      return html`
-      <li class="select-item select-item--selected" @click=${() => this.handleOption(item)}>
-        ${item.label}
-        ${checkedIconTemplate}
-      </li>
-      `
-
-    return html`<li class="select-item" @click=${() => this.handleOption(item)}>${item.label}</li>`
-  }
-
-  private dropdownTemplate() {
-    const keyframeOptions: KeyframeAnimationOptions = {
-      duration: 600,
-      fill: 'forwards'
-    }
-
-    return html`
-      <ul class="select" ${animate({
-        keyframeOptions,
-        in: fadeIn,
-        out: fadeOut,
-      })}>
-        ${repeat(this.computedOptions, (item) => item.id || item.value, this.dropdownItemTemplate.bind(this) )}
-      </ul>
-    `
   }
 
   private _onRemoveTag() {
@@ -158,22 +130,55 @@ export class DsSelect extends LitElement {
     this.requestUpdate('optionsChecked')
   }
 
-  private get tagsTemplate() {
+  private get shouldRenderPlaceholder() {
+    if(this.isOpen && this.isFilterable) return this.placeholderSearchable
+
+    return !this.optionsChecked.length ? this.placeholder : ''
+  }
+
+  private shouldHideValueOnFiltering(isDropdownOpened: boolean) {
+    if (this.isMulti) return;
+
+    if (isDropdownOpened) {
+      this.value = '';
+      this.computedOptions = this.options;
+      return;
+    }
+    
+    this.value = this.optionsChecked[0]?.label
+  }
+
+  private get shouldRenderDropdown() {
+    return this.isOpen && !!this.options.length;
+  }
+
+  private get renderTagsTemplate() {
     if (!this.isMulti) return;
     if (!this.optionsChecked.length) return;
+    if (this.isOpen && this.isFilterable) return;
 
     const hasMoreThanOne = this.optionsChecked.length > 1
 
     return html`
-      <div class="position-absolute top-2.3 left-2 flex gap-2">
-        <ds-tag is-closable @dsTagRemove=${this._onRemoveTag}>${this.optionsChecked[0].label}</ds-tag>
+      <div class="position-absolute top-2.3 left-2 flex gap-2 w-full">
+        <ds-tag is-closable is-truncate class="max-w-2/4" @dsTagRemove=${this._onRemoveTag}>${this.optionsChecked[0].label}</ds-tag>
         ${hasMoreThanOne ? html`<ds-tag>+${this.optionsChecked.length - 1}</ds-tag>`: ''}
       </div>
     `
   }
 
-  private get shouldRenderDropdown() {
-    return this.isOpen && !!this.options.length;
+  private get renderOptionsTemplate() {
+    return repeat(this.computedOptions, (item) => item?.id || item?.value, (option) => {
+      const isSelected = isOptionChecked(option, this.optionsChecked) || undefined 
+
+      return html`
+        <ds-select-item 
+          .isSelected="${isSelected}"
+          @dsSelectItemClick=${() => this.selectOption(option)}
+        >
+          ${option?.label}
+        </ds-select-item>
+    `})
   }
 
   render() {
@@ -181,18 +186,21 @@ export class DsSelect extends LitElement {
       <div class="position-relative">
         <input 
           type="text" 
-          class="input input--normal peer" placeholder="Select" 
-          readonly=${ifDefined(this.isFilterable)} 
+          class="input input--normal peer" 
+          placeholder=${ifDefined(this.shouldRenderPlaceholder)} 
+          readonly=${ifDefined(!this.isFilterable || undefined)} 
           .value="${this.value}"
           @click=${this._onClick} 
           @input=${this._onInput}
           @change=${this._onChange}
         />
         ${chevronIconTemplate}
-        ${this.tagsTemplate}
 
+        ${this.renderTagsTemplate}
 
-        ${this.shouldRenderDropdown ? this.dropdownTemplate() : null}
+        <ds-menu .isOpen=${this.shouldRenderDropdown}>
+          ${this.renderOptionsTemplate}
+        </ds-menu>
       </div>
     `
   }

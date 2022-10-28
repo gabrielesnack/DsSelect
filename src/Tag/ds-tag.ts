@@ -1,7 +1,9 @@
 import { LitElement, css, html, unsafeCSS, svg } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { cache } from 'lit/directives/cache.js';
+import {classMap} from 'lit/directives/class-map.js';
 import ResetCss from '@unocss/reset/eric-meyer.css'
+import { ifDefined } from 'lit/directives/if-defined';
 
 const timesIconTemplate = cache(svg`
   <svg viewBox="0 0 512 512" class="w-4 fill-gray-400 cursor-pointer">
@@ -14,11 +16,25 @@ const timesIconTemplate = cache(svg`
 export class DsTag extends LitElement {
   static styles = [
     unsafeCSS(ResetCss), 
-    css`@unocss-placeholder;`, 
+    css`
+      @unocss-placeholder;
+    `, 
+
+    css`
+      :host([is-truncate]) slot {
+        display: inline-block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    `
   ]
 
   @property({ type: Boolean, attribute: 'is-closable' })
   isClosable = false
+
+  @property({ type: Boolean, attribute: 'is-truncate' })
+  isTruncate = false
 
   private _onRemove() {
     this.dispatchEvent(new CustomEvent('dsTagRemove', {
