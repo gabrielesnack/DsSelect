@@ -36,7 +36,8 @@ export class DsTag extends LitElement {
   @property({ type: Boolean, attribute: 'is-truncate' })
   isTruncate = false
 
-  private _onRemove() {
+  private _onRemove(e: Event) {
+    e.stopImmediatePropagation();
     this.dispatchEvent(new CustomEvent('dsTagRemove', {
       bubbles: true,
       composed: true 

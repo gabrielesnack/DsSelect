@@ -25,7 +25,8 @@ export class DsSelectItem extends LitElement {
   @property({ type: Boolean  })
   public isSelected = false; 
 
-  private _onClick() {
+  private _onClick(e: Event) {
+    e.stopPropagation();
     this.dispatchEvent(new CustomEvent('dsSelectItemClick', {
       bubbles: true,
       composed: true 

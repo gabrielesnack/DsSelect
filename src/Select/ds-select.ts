@@ -6,7 +6,7 @@ import {repeat} from 'lit/directives/repeat.js';
 import {ifDefined} from 'lit/directives/if-defined.js';
 import ResetCss from '@unocss/reset/eric-meyer.css'
 import { HTMLElementEvent, OptionsType } from './interface';
-import { filterByLabel, isChecked, isOptionChecked, sliceLabel, sortByItemsChecked } from './helper';
+import { filterByLabel, isChecked, isOptionChecked, preventPropagation, sliceLabel, sortByItemsChecked } from './helper';
 
 
 const chevronIconTemplate = cache(svg`
@@ -34,9 +34,6 @@ export class DsSelect extends LitElement {
 
   @property()
   placeholder: string = 'Escolha uma fruta'
-
-  @property()
-  placeholderSearchable: string = 'Digite a opção desejada'
 
   @property({type: Boolean, attribute: 'is-multi'})
   isMulti = false;
@@ -98,7 +95,7 @@ export class DsSelect extends LitElement {
     this.computedOptions = filterByLabel(value, this.options)
   }
 
-  private _onClick() {
+  private _onClick(e: Event) {
     this.isOpen = !this.isOpen;
   }
 
@@ -131,9 +128,13 @@ export class DsSelect extends LitElement {
   }
 
   private get shouldRenderPlaceholder() {
-    if(this.isOpen && this.isFilterable) return this.placeholderSearchable
+    const hasOptionsSelected = this.optionsChecked.length;
 
-    return !this.optionsChecked.length ? this.placeholder : ''
+    if (this.isMulti && hasOptionsSelected) return ''
+
+    if (!this.isMulti && hasOptionsSelected) return this.placeholder
+
+    return this.placeholder
   }
 
   private shouldHideValueOnFiltering(isDropdownOpened: boolean) {
@@ -155,15 +156,20 @@ export class DsSelect extends LitElement {
   private get renderTagsTemplate() {
     if (!this.isMulti) return;
     if (!this.optionsChecked.length) return;
-    if (this.isOpen && this.isFilterable) return;
+    // if (this.isOpen && this.isFilterable) return;
 
     const hasMoreThanOne = this.optionsChecked.length > 1
 
     return html`
-      <div class="position-absolute top-2.3 left-2 flex gap-2 w-full">
-        <ds-tag is-closable is-truncate class="max-w-2/4" @dsTagRemove=${this._onRemoveTag}>${this.optionsChecked[0].label}</ds-tag>
-        ${hasMoreThanOne ? html`<ds-tag>+${this.optionsChecked.length - 1}</ds-tag>`: ''}
-      </div>
+      <ds-tag 
+        is-closable 
+        is-truncate 
+        class="max-w-2/4 shrink"
+        @dsTagRemove=${this._onRemoveTag} 
+      >
+        ${this.optionsChecked[0].label}
+      </ds-tag>
+      ${hasMoreThanOne ? html`<ds-tag>+${this.optionsChecked.length - 1}</ds-tag>`: ''}
     `
   }
 
@@ -183,20 +189,21 @@ export class DsSelect extends LitElement {
 
   render() {
     return html`
-      <div class="position-relative">
+      <div 
+        class="select select--normal"
+        @click=${this._onClick} 
+      >
+        ${this.renderTagsTemplate}
+
         <input 
           type="text" 
-          class="input input--normal peer" 
+          class="input-inner w-full"
           placeholder=${ifDefined(this.shouldRenderPlaceholder)} 
           readonly=${ifDefined(!this.isFilterable || undefined)} 
           .value="${this.value}"
-          @click=${this._onClick} 
           @input=${this._onInput}
           @change=${this._onChange}
         />
-        ${chevronIconTemplate}
-
-        ${this.renderTagsTemplate}
 
         <ds-menu .isOpen=${this.shouldRenderDropdown}>
           ${this.renderOptionsTemplate}
