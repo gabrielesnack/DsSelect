@@ -33,11 +33,6 @@ export class DsSelect extends LitElement {
     css`
       @unocss-placeholder;
     `,
-    css`
-      select {
-        width: -webkit-fill-available;
-      }
-    `,
   ];
 
   constructor() {
