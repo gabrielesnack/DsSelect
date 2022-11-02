@@ -26,10 +26,16 @@ a:hover {
 
 body {
   margin: 0;
+  width: 100%;
+  height: 200vh;
+}
+
+.app-center {
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin-top: 150%;
 }
 
 @media (prefers-color-scheme: light) {
@@ -37,15 +43,6 @@ body {
     color: #213547;
     background-color: #ffffff;
   }
-}
-
-
-.app-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
 }
 
 * {

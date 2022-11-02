@@ -1,13 +1,8 @@
 import { LitElement, css, html, unsafeCSS, svg, PropertyValueMap } from "lit";
 import {
   animate,
-  fadeIn,
-  fadeInSlow,
-  fadeOut,
-  flyAbove,
-  flyBelow,
 } from "@lit-labs/motion";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
 import { repeat } from "lit/directives/repeat.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -19,11 +14,16 @@ import {
   isOptionChecked,
   sortByItemsChecked,
 } from "./helper";
+import { MenuController } from "../Menu/helper";
+import { classMap } from "lit/directives/class-map.js";
 
-const chevronIconTemplate = cache(svg`
-<svg class="peer-focus:-rotate-180 transition-all transition-duration-200 fill-gray-400 w-3 position-absolute right-3 top-4" viewBox="0 0 512 512">
- <!--! Font Awesome Pro 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/>
-</svg>
+const chevronIconTemplate = (isOpen: boolean) => cache(svg`
+  <svg class=${classMap({
+    "select-chevron": true,
+    "select-chevron--down": isOpen
+  })} viewBox="0 0 512 512" ${animate()}>
+  <!--! Font Awesome Pro 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/>
+  </svg>
 `);
 
 @customElement("ds-select")
@@ -40,6 +40,8 @@ export class DsSelect extends LitElement {
     this._computedOptions = this.options;
   }
 
+  private _menuController = new MenuController(this);
+
   @property()
   placeholder: string = "Escolha uma fruta";
 
@@ -55,6 +57,10 @@ export class DsSelect extends LitElement {
     { id: 2, value: "2", label: "Ana" },
     { id: 3, value: "3", label: "Maça" },
     { id: 4, value: "4", label: "Laranja" },
+    // { id: 5, value: "5", label: "Laranja" },
+    // { id: 6, value: "6", label: "Laranja" },
+    // { id: 7, value: "7", label: "Laranja" },
+    // { id: 8, value: "8", label: "Laranja" },
   ] as OptionsType[];
 
   @state()
@@ -110,10 +116,6 @@ export class DsSelect extends LitElement {
   private _onRemoveTag() {
     this.optionsChecked.shift();
     this.requestUpdate("optionsChecked");
-  }
-
-  private _handleDropdownPlacement() {
-    console.log("changed");
   }
 
   private _handleSingleOption(item: OptionsType) {
@@ -210,15 +212,6 @@ export class DsSelect extends LitElement {
     );
   }
 
-  connectedCallback() {
-    super.connectedCallback();
-    window.addEventListener("scroll", this._handleDropdownPlacement);
-  }
-  disconnectedCallback() {
-    window.removeEventListener("scroll", this._handleDropdownPlacement);
-    super.disconnectedCallback();
-  }
-
   render() {
     return html`
       <div class="select select--normal" @click=${this._onClick}>
@@ -234,7 +227,9 @@ export class DsSelect extends LitElement {
           @change=${this._onChange}
         />
 
-        <ds-menu .isOpen=${this._shouldRenderDropdown}>
+        ${chevronIconTemplate(this._shouldRenderDropdown)}
+
+        <ds-menu ${this._menuController.observe()} .isOpen=${this._shouldRenderDropdown} .isInverted=${this._menuController.isInverted}>
           ${this._renderOptionsTemplate}
         </ds-menu>
       </div>
