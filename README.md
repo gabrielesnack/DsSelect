@@ -4,7 +4,13 @@ It's a simple draft about how to do a simple and multi select using Lit Elements
 
 I'd like to highlight, this is a draft which was made for apollion design system, and so you can try and see more on [@apollion-ds/web-components](https://www.npmjs.com/package/@apollion-ds/web-components)
 
-The style of this component was made thinking in [Element-UI#Select](https://element.eleme.io/#/en-US/component/select#select)
+### Some specifications.
+- The style of this component was made thinking in [Element-UI#Select](https://element.eleme.io/#/en-US/component/select#select)
+- It has a sort method to list all items selected in the top.
+- It has a filter method to find the desired item.
+- It can select one or more items.
+- You can assign a message for items that are not found.
+- You can clear only first item selected or all items.
 
 #### Pieces of Select:
 - Menu
@@ -33,3 +39,10 @@ Looking at Apollion Design System until 2.0.0v the components above has suffered
 
 **PS:** This Draft was improved and refactored by me in [@apollion-ds/web-components](https://www.npmjs.com/package/@apollion-ds/web-components) and besides you can take a look it working in react
 [@apollion-ds/react](https://www.npmjs.com/package/@apollion-ds/react)
+
+
+---
+#### Additional Ideas
+- Improve perfomance of items that are being rendered using virtual dom while scrolling to render less item than necessary and load page faster.
+- Add new callbacks to control filter method and sort method.
+- Add a new feature to make async searches like request google api of your desired location.
